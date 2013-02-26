@@ -9,6 +9,13 @@ namespace metrics.Net
 {
     public class MetricsListener : IDisposable
     {
+        /// <summary>
+        /// This error code is raise when GetContext() is interrupted because the
+        /// httplistener as been Stop()ped. It means we need to exit the main while
+        /// loop in the listening thread.
+        /// </summary>
+        private const int GetContextInterrupted = 995;
+
         public const string NotFoundResponse = "<!doctype html><html><body>Resource not found</body></html>";
         public const string PingResponse = "pong";
         private HttpListener _listener;
@@ -23,7 +30,6 @@ namespace metrics.Net
 
         public static void ListenerCallback(IAsyncResult result)
         {
-
         }
 
         public void Dispose()
@@ -45,62 +51,80 @@ namespace metrics.Net
             {
                 while (!_task.IsCancellationRequested)
                 {
-                    var context = _listener.GetContext();
-
-                    ThreadPool.QueueUserWorkItem(_ => HandleContext(context));
+                    try
+                    {
+                        var context = _listener.GetContext();
+                        ThreadPool.QueueUserWorkItem(_ => HandleContext(context));
+                    }
+                    catch (HttpListenerException e)
+                    {
+                        if (e.ErrorCode == GetContextInterrupted)
+                        {
+                            // The receiver has been stopped. Return.
+                            return;
+                        }
+                        throw;
+                    }
                 }
             }, _task.Token);
         }
 
         private static void HandleContext(HttpListenerContext context)
         {
-            var request = context.Request; 
+            var request = context.Request;
             var response = context.Response;
 
             // TODO: parse 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
             // http://www.singular.co.nz/blog/archive/2008/07/06/finding-preferred-accept-encoding-header-in-csharp.aspx
 
             var mimeType = request.Headers["Accept"] ?? "application/json";
-            
+
             switch (request.RawUrl)
             {
                 case "/static/jquery.js":
                     RespondWithFile(response, "jquery.js");
                     break;
+
                 case "/static/jquery.flot.min.js":
                     RespondWithFile(response, "jquery.flot.min.js");
                     break;
+
                 case "/":
-                    switch(mimeType)
+                    switch (mimeType)
                     {
                         case "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8":
                             RespondWithFile(response, "index.html");
                             break;
+
                         default: // "application/json"
                             RespondWithNotFound(response);
                             break;
                     }
                     break;
+
                 case "/ping":
                     response.StatusCode = 200;
                     response.StatusDescription = "OK";
                     WriteFinal(PingResponse, response);
                     break;
+
                 case "/metrics":
                     response.StatusCode = 200;
                     response.StatusDescription = "OK";
 
-                    switch(mimeType)
+                    switch (mimeType)
                     {
                         case "text/html":
                             WriteFinal(Serializer.Serialize(Metrics.AllSorted), response);
                             break;
+
                         default: // "application/json"
                             WriteFinal(Serializer.Serialize(Metrics.AllSorted), response);
                             break;
                     }
-                    
+
                     break;
+
                 default:
                     RespondWithNotFound(response);
                     break;
@@ -133,7 +157,7 @@ namespace metrics.Net
 
         public void Stop()
         {
-            if(!_task.IsCancellationRequested)
+            if (!_task.IsCancellationRequested)
             {
                 _task.Cancel();
             }
@@ -146,7 +170,7 @@ namespace metrics.Net
 
             using (var resourceStream = assembly.GetManifestResourceStream(name))
             {
-                using(var sr = new StreamReader(resourceStream))
+                using (var sr = new StreamReader(resourceStream))
                 {
                     return sr.ReadToEnd();
                 }
