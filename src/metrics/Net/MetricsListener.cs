@@ -3,7 +3,7 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using metrics.Serialization;
+using metrics.Reporting;
 
 namespace metrics.Net
 {
@@ -20,6 +20,12 @@ namespace metrics.Net
         public const string PingResponse = "pong";
         private HttpListener _listener;
         private CancellationTokenSource _task;
+        private readonly IReportFormatter _formatter;
+
+        public MetricsListener(IReportFormatter formatter = null)
+        {
+            _formatter = formatter ?? new JsonReportFormatter();
+        }
 
         private static HttpListener InitializeListenerOnPort(int port)
         {
@@ -69,7 +75,7 @@ namespace metrics.Net
             }, _task.Token);
         }
 
-        private static void HandleContext(HttpListenerContext context)
+        private void HandleContext(HttpListenerContext context)
         {
             var request = context.Request;
             var response = context.Response;
@@ -115,11 +121,11 @@ namespace metrics.Net
                     switch (mimeType)
                     {
                         case "text/html":
-                            WriteFinal(Serializer.Serialize(Metrics.AllSorted), response);
+                            WriteFinal(_formatter.GetSample(), response);
                             break;
 
                         default: // "application/json"
-                            WriteFinal(Serializer.Serialize(Metrics.AllSorted), response);
+                            WriteFinal(_formatter.GetSample(), response);
                             break;
                     }
 
