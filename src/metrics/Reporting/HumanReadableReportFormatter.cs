@@ -7,7 +7,7 @@ namespace metrics.Reporting
 {
     public class HumanReadableReportFormatter : IReportFormatter
     {
-        public string GetSample()
+        public virtual string GetSample()
         {
             var sb = new StringBuilder();
             var now = DateTime.Now;
