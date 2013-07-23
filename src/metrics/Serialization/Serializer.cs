@@ -9,8 +9,9 @@ namespace metrics.Serialization
     {
         static Serializer()
         {
-            JsConfig.EmitLowercaseUnderscoreNames = true;
-            JsConfig.PropertyConvention = JsonPropertyConvention.Lenient;
+            // Those 2 lines transform ThatProrperty to that_property when serializing a property.
+            //JsConfig.EmitLowercaseUnderscoreNames = true;
+            //JsConfig.PropertyConvention = JsonPropertyConvention.Lenient;
             JsConfig.ExcludeTypeInfo = true;
         }
 
