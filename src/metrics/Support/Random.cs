@@ -10,13 +10,14 @@ namespace metrics.Support
     public class Random
     {
 		private static readonly ThreadLocal<RandomNumberGenerator> _random = new ThreadLocal<RandomNumberGenerator>(RandomNumberGenerator.Create);
-        
-        public static long NextLong()
+        private static readonly System.Random _prng;
+
+        public static bool UseCrypto { get; set; }
+
+        static Random()
         {
-            var buffer = new byte[sizeof(long)];
-            _random.Value.GetBytes(buffer);
-            var value = BitConverter.ToInt64(buffer, 0);
-            return value;
+            _prng = new System.Random();
+            UseCrypto = true;
         }
 
         public static double NextDouble()
@@ -27,6 +28,27 @@ namespace metrics.Support
                 l = 0;
             }
             return (l + .0) / Int64.MaxValue;
+        }
+
+        public static long NextLong()
+        {
+            return (UseCrypto ? NextLongCrypto() : NextLongFast());
+        }
+
+        public static long NextLongCrypto()
+        {
+            var buffer = new byte[sizeof(long)];
+            _random.Value.GetBytes(buffer);
+            var value = BitConverter.ToInt64(buffer, 0);
+            return value;
+        }
+
+        public static long NextLongFast()
+        {
+            var buffer = new byte[sizeof(long)];
+            _prng.NextBytes(buffer);
+            var value = BitConverter.ToInt64(buffer, 0);
+            return value;
         }
     }
 }
