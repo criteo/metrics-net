@@ -60,7 +60,7 @@ namespace metrics.Tests.Net
             var content = GetResponseForRequest("http://localhost:" + Port + "/metrics");
 
             const string expected = @"[{""name"":""counter"",""metric"":{""count"":1}}]";
-            Assert.AreEqual(expected, content);
+            Assert.AreEqual(expected, content.ToLower());
         }
 
         [Test]
