@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Security.Cryptography;
+using System.Threading;
 
 namespace metrics.Support
 {
@@ -8,15 +9,13 @@ namespace metrics.Support
     /// </summary>
     public class Random
     {
-        private static readonly RandomNumberGenerator _random;
-        private static readonly System.Random _prng;
+		private static readonly ThreadLocal<RandomNumberGenerator> _random = new ThreadLocal<RandomNumberGenerator>(RandomNumberGenerator.Create);
+        private static readonly ThreadLocal<System.Random> _prng = new ThreadLocal<System.Random>(() => new System.Random());
 
         public static bool UseCrypto { get; set; }
 
         static Random()
         {
-            _random = RandomNumberGenerator.Create();
-            _prng = new System.Random();
             UseCrypto = true;
         }
 
@@ -28,14 +27,14 @@ namespace metrics.Support
         public static long NextLongCrypto()
         {
             var buffer = new byte[sizeof(long)];
-            _random.GetBytes(buffer);
+            _random.Value.GetBytes(buffer);
             return BitConverter.ToInt64(buffer, 0);
         }
 
         public static long NextLongFast()
         {
             var buffer = new byte[sizeof(long)];
-            _prng.NextBytes(buffer);
+            _prng.Value.NextBytes(buffer);
             return BitConverter.ToInt64(buffer, 0);
         }
     }
