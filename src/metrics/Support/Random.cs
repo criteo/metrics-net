@@ -37,5 +37,13 @@ namespace metrics.Support
             _prng.Value.NextBytes(buffer);
             return BitConverter.ToInt64(buffer, 0);
         }
+
+        public static double NextDouble()
+        {
+            var l = NextLong();
+            if (l == Int64.MinValue) l = 0;
+            return (Math.Abs(l) + .0)/Int64.MaxValue;
+        }
+
     }
 }
