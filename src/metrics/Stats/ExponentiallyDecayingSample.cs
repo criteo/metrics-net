@@ -23,8 +23,7 @@ namespace metrics.Stats
     {
         private static readonly long RescaleThreshold = TimeUnit.Hours.ToNanos(1);
         /* Implemented originally as ConcurrentSkipListMap, so lookups will be much slower */
-        private readonly ConcurrentDictionary<double, long> _values;
-        private readonly ReaderWriterLockSlim _lock;
+        private readonly SortedDictionary<double, long> _values;
         private readonly int _reservoirSize;
         private readonly double _alpha;
         private readonly AtomicLong _count = new AtomicLong(0);
@@ -35,8 +34,7 @@ namespace metrics.Stats
         /// <param name="alpha">The exponential decay factor; the higher this is, the more biased the sample will be towards newer values</param>
         public ExponentiallyDecayingSample(int reservoirSize, double alpha)
         {
-            _lock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
-            _values = new ConcurrentDictionary<double, long>();
+            _values = new SortedDictionary<double, long>();
             _alpha = alpha;
             _reservoirSize = reservoirSize;
             Clear();
@@ -51,13 +49,13 @@ namespace metrics.Stats
             _count.Set(0);
             _startTime = Tick();
         }
-        
+
         /// <summary>
         /// Returns the number of values recorded
         /// </summary>
         public int Count
         {
-            get { return (int) Math.Min(_reservoirSize, _count); }
+            get { return (int)Math.Min(_reservoirSize, _count); }
         }
 
         /// <summary>
@@ -70,38 +68,33 @@ namespace metrics.Stats
 
         private void Update(long value, long timestamp)
         {
-            _lock.EnterReadLock();
+            if (Monitor.TryEnter(_values)) return;
             try
             {
                 var priority = Weight(timestamp - _startTime) / Support.Random.NextLong();
                 var newCount = _count.IncrementAndGet();
-                if(newCount <= _reservoirSize)
+                if (newCount <= _reservoirSize)
                 {
-                    _values.AddOrUpdate(priority, value, (p, v) => v);
+                    _values[priority] = value;
                 }
                 else
                 {
                     var first = _values.Keys.First();
-                    if(first < priority)
+                    if (first < priority)
                     {
-                        _values.AddOrUpdate(priority, value, (p, v) => v);
-
-                        long removed;
-                        while(!_values.TryRemove(first, out removed))
-                        {
-                            first = _values.Keys.First();
-                        }
+                        _values.Remove(first);
+                        _values[priority] = value;
                     }
                 }
             }
             finally
             {
-                _lock.ExitReadLock();
+                Monitor.Exit(_values);
             }
 
             var now = DateTime.Now.Ticks;
             var next = _nextScaleTime.Get();
-            if(now >= next)
+            if (now >= next)
             {
                 Rescale(now, next);
             }
@@ -114,14 +107,9 @@ namespace metrics.Stats
         {
             get
             {
-                _lock.EnterReadLock();
-                try
+                lock (_values)
                 {
                     return new List<long>(_values.Values);
-                }
-                finally
-                {
-                    _lock.ExitReadLock();
                 }
             }
         }
@@ -135,7 +123,7 @@ namespace metrics.Stats
         {
             return Math.Exp(_alpha * t);
         }
-        
+
         /// <summary>
         /// "A common feature of the above techniques—indeed, the key technique that
         /// allows us to track the decayed weights efficiently—is that they maintain
@@ -164,22 +152,17 @@ namespace metrics.Stats
                 return;
             }
 
-            _lock.EnterWriteLock();
-            try
+            lock (_values)
             {
                 var oldStartTime = _startTime;
                 _startTime = Tick();
                 var keys = new List<double>(_values.Keys);
                 foreach (var key in keys)
                 {
-                    long value;
-                    _values.TryRemove(key, out value);
-                    _values.AddOrUpdate(key*Math.Exp(-_alpha*(_startTime - oldStartTime)), value, (k, v) => v);
+                    long value = _values[key];
+                    _values.Remove(key);
+                    _values[key * Math.Exp(-_alpha * (_startTime - oldStartTime))] = value;
                 }
-            }
-            finally
-            {
-                _lock.ExitWriteLock();
             }
         }
 
@@ -192,9 +175,12 @@ namespace metrics.Stats
                 copy._startTime.Set(_startTime);
                 copy._count.Set(_count);
                 copy._nextScaleTime.Set(_nextScaleTime);
-                foreach(var value in _values)
+                lock (_values)
                 {
-                    copy._values.AddOrUpdate(value.Key, value.Value, (k, v) => v);
+                    foreach (var value in _values)
+                    {
+                        copy._values[value.Key] = value.Value;
+                    }
                 }
                 return copy;
             }
