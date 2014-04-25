@@ -71,7 +71,7 @@ namespace metrics.Stats
             if (Monitor.TryEnter(_values)) return;
             try
             {
-                var priority = Weight(timestamp - _startTime) / Support.Random.NextLong();
+                var priority = Weight(timestamp - _startTime) / Support.Random.NextDouble();
                 var newCount = _count.IncrementAndGet();
                 if (newCount <= _reservoirSize)
                 {
@@ -116,7 +116,7 @@ namespace metrics.Stats
 
         private static long Tick()
         {
-            return DateTime.Now.Ticks;
+            return DateTime.UtcNow.Ticks;
         }
 
         private double Weight(long t)
