@@ -71,7 +71,13 @@ namespace metrics.Stats
             if (Monitor.TryEnter(_values)) return;
             try
             {
-                var priority = Weight(timestamp - _startTime) / Support.Random.NextDouble();
+                double sample = .0;
+                // Prevent division by 0
+                while (sample.Equals(.0))
+                {
+                    sample = Support.Random.NextDouble();
+                }
+                var priority = Weight(timestamp - _startTime) / sample;
                 var newCount = _count.IncrementAndGet();
                 if (newCount <= _reservoirSize)
                 {
