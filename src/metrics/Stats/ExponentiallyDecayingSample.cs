@@ -68,7 +68,7 @@ namespace metrics.Stats
 
         private void Update(long value, long timestamp)
         {
-            if (Monitor.TryEnter(_values)) return;
+            if (!Monitor.TryEnter(_values)) return;
             try
             {
                 double sample = .0;
