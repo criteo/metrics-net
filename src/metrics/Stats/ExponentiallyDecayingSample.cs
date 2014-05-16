@@ -30,6 +30,8 @@ namespace metrics.Stats
         private VolatileLong _startTime;
         private readonly AtomicLong _nextScaleTime = new AtomicLong(0);
 
+        private SpinLock _lock = new SpinLock();
+
         /// <param name="reservoirSize">The number of samples to keep in the sampling reservoir</param>
         /// <param name="alpha">The exponential decay factor; the higher this is, the more biased the sample will be towards newer values</param>
         public ExponentiallyDecayingSample(int reservoirSize, double alpha)
@@ -68,7 +70,9 @@ namespace metrics.Stats
 
         private void Update(long value, long timestamp)
         {
-            if (!Monitor.TryEnter(_values)) return;
+            var lockTaken = false;
+            _lock.TryEnter(ref lockTaken);
+            if (!lockTaken) return;
             try
             {
                 double sample = .0;
@@ -95,7 +99,7 @@ namespace metrics.Stats
             }
             finally
             {
-                Monitor.Exit(_values);
+                _lock.Exit();
             }
 
             var now = DateTime.Now.Ticks;
@@ -113,9 +117,15 @@ namespace metrics.Stats
         {
             get
             {
-                lock (_values)
+                var lockTaken = false;
+                try
                 {
+                    _lock.Enter(ref lockTaken);
                     return new List<long>(_values.Values);
+                }
+                finally
+                {
+                    if(lockTaken) _lock.Exit();
                 }
             }
         }
@@ -158,8 +168,10 @@ namespace metrics.Stats
                 return;
             }
 
-            lock (_values)
+            var lockTaken = false;
+            try
             {
+                _lock.Enter(ref lockTaken);
                 var oldStartTime = _startTime;
                 _startTime = Tick();
                 var keys = new List<double>(_values.Keys);
@@ -169,6 +181,10 @@ namespace metrics.Stats
                     _values.Remove(key);
                     _values[key * Math.Exp(-_alpha * (_startTime - oldStartTime))] = value;
                 }
+            }
+            finally
+            {
+                if (lockTaken) _lock.Exit();
             }
         }
 
@@ -181,12 +197,18 @@ namespace metrics.Stats
                 copy._startTime.Set(_startTime);
                 copy._count.Set(_count);
                 copy._nextScaleTime.Set(_nextScaleTime);
-                lock (_values)
+                var lockTaken = false;
+                try
                 {
+                    _lock.Enter(ref lockTaken);
                     foreach (var value in _values)
                     {
                         copy._values[value.Key] = value.Value;
                     }
+                }
+                finally
+                {
+                    if(lockTaken) _lock.Exit();
                 }
                 return copy;
             }
