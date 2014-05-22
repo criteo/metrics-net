@@ -30,6 +30,8 @@ namespace metrics.Stats
         private VolatileLong _startTime;
         private readonly AtomicLong _nextScaleTime = new AtomicLong(0);
 
+        private double _firstPriority;
+
         private SpinLock _lock = new SpinLock();
 
         /// <param name="reservoirSize">The number of samples to keep in the sampling reservoir</param>
@@ -86,14 +88,19 @@ namespace metrics.Stats
                 if (newCount <= _reservoirSize)
                 {
                     _values[priority] = value;
+                    if (newCount == _reservoirSize)
+                    {
+                        _firstPriority = _values.Keys.First();
+                    }
                 }
                 else
                 {
-                    var first = _values.Keys.First();
+                    var first = _firstPriority;
                     if (first < priority)
                     {
                         _values.Remove(first);
                         _values[priority] = value;
+                       _firstPriority = _values.Keys.First();
                     }
                 }
             }
@@ -102,7 +109,7 @@ namespace metrics.Stats
                 _lock.Exit();
             }
 
-            var now = DateTime.Now.Ticks;
+            var now = Tick();
             var next = _nextScaleTime.Get();
             if (now >= next)
             {
