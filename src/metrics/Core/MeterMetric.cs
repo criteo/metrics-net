@@ -14,35 +14,20 @@ namespace metrics.Core
     public class MeterMetric : IMetric, IMetered, IDisposable
     {
         private AtomicLong _count = new AtomicLong();
-        private readonly long _startTime = DateTime.Now.Ticks;
+        private readonly long _startTime = DateTime.UtcNow.Ticks;
         private static readonly TimeSpan Interval = TimeSpan.FromSeconds(5);
 
         private EWMA _m1Rate = EWMA.OneMinuteEWMA();
         private EWMA _m5Rate = EWMA.FiveMinuteEWMA();
         private EWMA _m15Rate = EWMA.FifteenMinuteEWMA();
-        
-        private readonly CancellationTokenSource _token = new CancellationTokenSource();
 
-        public static MeterMetric New(string eventType, TimeUnit rateUnit)
-        {
-            var meter = new MeterMetric(eventType, rateUnit);
+        private readonly Timer _timer;
 
-            Task.Factory.StartNew(() =>
-            {
-                while (!meter._token.IsCancellationRequested)
-                {
-                    Thread.Sleep(Interval);
-                    meter.Tick();
-                }
-            }, meter._token.Token);
-
-            return meter;
-        }
-
-        private MeterMetric(string eventType, TimeUnit rateUnit)
+        public MeterMetric(string eventType, TimeUnit rateUnit)
         {
             EventType = eventType;
             RateUnit = rateUnit;
+            _timer = new Timer(_ => Tick(), null, TimeSpan.Zero, Interval);
         }
 
         /// <summary>
@@ -133,7 +118,7 @@ namespace metrics.Core
             {
                 if (Count != 0)
                 {
-                    var elapsed = (DateTime.Now.Ticks - _startTime) * 100; // 1 DateTime Tick == 100ns
+                    var elapsed = (DateTime.UtcNow.Ticks - _startTime) * 100; // 1 DateTime Tick == 100ns
                     return ConvertNanosRate(Count / (double)elapsed);
                 }
                 return 0.0;
@@ -180,7 +165,7 @@ namespace metrics.Core
 
         public void Dispose()
         {
-            _token.Cancel();
+            _timer.Dispose();
         }
     }
 }
