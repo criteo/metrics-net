@@ -33,7 +33,7 @@ namespace metrics.Stats
         // As we always remove the smallest value, it would mean always copy all the data.
         private static readonly IComparer<double> PriorityComparer = new ReverseOrderDoubleComparer();
 
-        private static readonly long RescaleThreshold = TimeUnit.Hours.ToNanos(1);
+        private static readonly long RescaleThreshold = TimeSpan.FromHours(1).Ticks;
         /* Implemented originally as ConcurrentSkipListMap, so lookups will be much slower */
         private readonly SortedList<double, long> _values;
         private readonly int _reservoirSize;
@@ -101,7 +101,7 @@ namespace metrics.Stats
                 }
                 else
                 {
-                    var first = _values.Keys[_reservoirSize - 1]; 
+                    var first = _values.Keys[_values.Count - 1];
                     if (first < priority)
                     {
                         _values.Remove(first);
