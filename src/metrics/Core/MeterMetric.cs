@@ -27,7 +27,7 @@ namespace metrics.Core
         {
             EventType = eventType;
             RateUnit = rateUnit;
-            _timer = new Timer(_ => Tick(), null, TimeSpan.Zero, Interval);
+            _timer = new Timer(_ => Tick(), null, Interval, Interval);
         }
 
         /// <summary>
