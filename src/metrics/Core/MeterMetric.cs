@@ -45,7 +45,20 @@ namespace metrics.Core
         {
             EventType = eventType;
             RateUnit = rateUnit;
-            _timer = new Timer(_ => Tick(), null, TimeSpan.Zero, Interval);
+            _timer = new Timer(_ => Tick(), null, Interval, Interval);
+        }
+
+        /// <summary>
+        /// Clears all recorded values
+        /// </summary>
+        public void Clear()
+        {
+            _count.Set(0);
+            _m1Rate.Clear();
+            _m5Rate.Clear();
+            _m15Rate.Clear();
+            _startTime = DateTime.UtcNow.Ticks;
+            _timer.Change(Interval, Interval);
         }
 
         /// <summary>
