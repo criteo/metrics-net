@@ -40,6 +40,7 @@ namespace metrics.Core
             _m5Rate.Clear();
             _m15Rate.Clear();
             _startTime = DateTime.UtcNow.Ticks;
+            _timer.Change(Interval, Interval);
         }
 
         /// <summary>

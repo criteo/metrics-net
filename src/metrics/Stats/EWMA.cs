@@ -74,6 +74,7 @@ namespace metrics.Stats
         {
             _uncounted.Set(0);
             _rate.Set(0);
+            _initialized = false;
         }
 
         /// <summary>
