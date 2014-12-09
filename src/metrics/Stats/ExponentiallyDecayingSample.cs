@@ -137,7 +137,7 @@ namespace metrics.Stats
                 }
                 finally
                 {
-                    if(lockTaken) _lock.Exit();
+                    if (lockTaken) _lock.Exit();
                 }
             }
         }
@@ -220,7 +220,7 @@ namespace metrics.Stats
                 }
                 finally
                 {
-                    if(lockTaken) _lock.Exit();
+                    if (lockTaken) _lock.Exit();
                 }
                 return copy;
             }
