@@ -38,7 +38,6 @@ namespace metrics.Stats
         private readonly SortedList<double, long> _values;
         private readonly int _reservoirSize;
         private readonly double _alpha;
-        private readonly AtomicLong _count = new AtomicLong(0);
         private VolatileLong _startTime;
         private readonly AtomicLong _nextScaleTime = new AtomicLong(0);
 
@@ -60,7 +59,6 @@ namespace metrics.Stats
         public void Clear()
         {
             _values.Clear();
-            _count.Set(0);
             _startTime = Tick();
         }
 
@@ -69,7 +67,7 @@ namespace metrics.Stats
         /// </summary>
         public int Count
         {
-            get { return (int)Math.Min(_reservoirSize, _count); }
+            get { return _values.Count; }
         }
 
         /// <summary>
@@ -87,6 +85,13 @@ namespace metrics.Stats
             if (!lockTaken) return;
             try
             {
+                var now = Tick();
+                var next = _nextScaleTime.Get();
+                if (now >= next)
+                {
+                    Rescale(now, next);
+                }
+
                 double sample = .0;
                 // Prevent division by 0
                 while (sample.Equals(.0))
@@ -94,8 +99,7 @@ namespace metrics.Stats
                     sample = Support.Random.NextDouble();
                 }
                 var priority = Weight(timestamp - _startTime) / sample;
-                var newCount = _count.IncrementAndGet();
-                if (newCount <= _reservoirSize)
+                if (_values.Count < _reservoirSize)
                 {
                     _values[priority] = value;
                 }
@@ -114,12 +118,7 @@ namespace metrics.Stats
                 _lock.Exit();
             }
 
-            var now = Tick();
-            var next = _nextScaleTime.Get();
-            if (now >= next)
-            {
-                Rescale(now, next);
-            }
+
         }
 
         /// <summary>
@@ -137,7 +136,7 @@ namespace metrics.Stats
                 }
                 finally
                 {
-                    if(lockTaken) _lock.Exit();
+                    if (lockTaken) _lock.Exit();
                 }
             }
         }
@@ -175,28 +174,15 @@ namespace metrics.Stats
         /// <param name="next"></param>
         private void Rescale(long now, long next)
         {
-            if (!_nextScaleTime.CompareAndSet(next, now + RescaleThreshold))
+            _nextScaleTime.Set(now + RescaleThreshold);
+            var oldStartTime = _startTime;
+            _startTime = Tick();
+            var keys = new List<double>(_values.Keys);
+            foreach (var key in keys)
             {
-                return;
-            }
-
-            var lockTaken = false;
-            try
-            {
-                _lock.Enter(ref lockTaken);
-                var oldStartTime = _startTime;
-                _startTime = Tick();
-                var keys = new List<double>(_values.Keys);
-                foreach (var key in keys)
-                {
-                    long value = _values[key];
-                    _values.Remove(key);
-                    _values[key * Math.Exp(-_alpha * (_startTime - oldStartTime))] = value;
-                }
-            }
-            finally
-            {
-                if (lockTaken) _lock.Exit();
+                long value = _values[key];
+                _values.Remove(key);
+                _values[key * Math.Exp(-_alpha * (_startTime - oldStartTime))] = value;
             }
         }
 
@@ -207,7 +193,6 @@ namespace metrics.Stats
             {
                 var copy = new ExponentiallyDecayingSample(_reservoirSize, _alpha);
                 copy._startTime.Set(_startTime);
-                copy._count.Set(_count);
                 copy._nextScaleTime.Set(_nextScaleTime);
                 var lockTaken = false;
                 try
@@ -220,7 +205,7 @@ namespace metrics.Stats
                 }
                 finally
                 {
-                    if(lockTaken) _lock.Exit();
+                    if (lockTaken) _lock.Exit();
                 }
                 return copy;
             }
