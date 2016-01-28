@@ -1503,7 +1503,7 @@ namespace metrics.Core
         private static PerformanceCounter GetOrInstallCounter(string property, string name, string category, string instance = null)
         {
 #if COREFX
-            throw new NotSupportedException();
+            return new PerformanceCounter();
 #else
             if (!Counters[Process].ContainsKey(property))
             {

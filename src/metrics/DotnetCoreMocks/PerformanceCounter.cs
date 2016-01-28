@@ -1,5 +1,4 @@
-﻿using System;
-
+﻿
 namespace metrics.DotnetCoreMocks
 {
     internal class PerformanceCounter
@@ -7,7 +6,7 @@ namespace metrics.DotnetCoreMocks
         internal string CounterName { get; set; }
         internal double NextValue()
         {
-            throw new NotSupportedException();
+            return 1.0d;
         }
 
         internal static void CloseSharedResources()
