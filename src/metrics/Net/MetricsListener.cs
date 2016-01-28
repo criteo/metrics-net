@@ -7,6 +7,7 @@ using metrics.Util;
 
 namespace metrics.Net
 {
+#if !COREFX
     public class MetricsListener : IDisposable
     {
         public const string NotFoundResponse = "<!doctype html><html><body>Resource not found</body></html>";
@@ -160,4 +161,5 @@ namespace metrics.Net
             }
         }
     }
+#endif
 }

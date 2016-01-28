@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Threading;
 using metrics.Support;
+#if COREFX
+using ThreadPriority = System.Diagnostics.ThreadPriorityLevel;
+#endif
 
 namespace metrics.Util
 {
@@ -42,8 +45,9 @@ namespace metrics.Util
             var number = Interlocked.Read(ref _number);
             Interlocked.Increment(ref _number);
             thread.Name = string.Concat(_prefix, number);
+#if !COREFX
             thread.Priority = priority;
-
+#endif
             _group.Add(thread);
             return thread;
         }

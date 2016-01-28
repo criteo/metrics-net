@@ -16,12 +16,20 @@ namespace metrics.Support
 
         public void Set(T value)
         {
+#if COREFX
+            _value = value;
+#else
             Thread.VolatileWrite(ref _value, value);
+#endif
         }
 
         public T Get()
         {
-            return (T)Thread.VolatileRead(ref _value);
+#if COREFX
+            return (T) _value;
+#else
+            return (T) Thread.VolatileRead(ref _value);
+#endif
         }
 
         public static implicit operator Volatile<T>(T value)

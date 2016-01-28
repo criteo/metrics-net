@@ -45,12 +45,20 @@ namespace metrics.Support
 
         public void Set(double value)
         {
+#if COREFX
+            _value = value;
+#else
             Thread.VolatileWrite(ref _value, value);
+#endif
         }
 
         public double Get()
         {
+#if COREFX
+            return _value;
+#else
             return Thread.VolatileRead(ref _value);
+#endif
         }
 
         public static implicit operator VolatileDouble(double value)

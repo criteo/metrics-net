@@ -1,9 +1,9 @@
-using System;
 using System.Diagnostics;
 using System.Threading;
 using NUnit.Framework;
-using metrics.Core;
-using metrics.Reporting;
+#if COREFX
+using Trace = System.Diagnostics.Debug;
+#endif
 
 namespace metrics.Tests.Core
 {
@@ -60,7 +60,6 @@ namespace metrics.Tests.Core
             var fiveMinuteRate = meter.FiveMinuteRate;
             var fifteenMinuteRate = meter.FifteenMinuteRate;
             var meanRate = meter.MeanRate;
-
             Assert.IsTrue(oneMinuteRate > 0);
             Trace.WriteLine("One minute rate:" + meter.OneMinuteRate);
 

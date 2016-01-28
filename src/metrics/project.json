@@ -12,15 +12,32 @@
                 "System.ServiceProcess": "4.0.0.0",
                 "System.Runtime.Serialization": "4.0.0.0"
             }
+        },
+        "dnxcore50": {
+            "compilationOptions": {
+                "define": [ "COREFX" ]
+            },
+            "dependencies": {
+                "System.Runtime": "4.0.21-*",
+                "System.IO.FileSystem": "4.0.1-*",
+                "System.Linq": "4.0.1-*",
+                "System.Console": "4.0.0-*",
+                "System.Collections.Concurrent": "4.0.10",
+                "System.Runtime.Serialization.Xml": "4.0.11",
+                "System.Runtime.Extensions": "4.0.10",
+                "System.Runtime.InteropServices": "4.0.20",
+                "System.Threading.Thread": "4.0.0-*",
+                "System.Threading.ThreadPool": "4.0.10-*",
+                "System.Diagnostics.StackTrace": "4.0.1-*",
+                "System.Diagnostics.Process": "4.1.0-beta-23516",
+                "System.Security.Cryptography.Algorithms": "4.0.0-beta-23516"
+            }
         }
     },
-
     "compilationOptions": {
         "keyFile": "../metrics/metrics.snk"
     },
-
     "resource": [ "Net/Static/*.js", "Net/Static/*.html" ],
-
     "version": "1.0.13",
     "authors": ["Daniel Crenna"],
     "owners": [ "Daniel Crenna" ],

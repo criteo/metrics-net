@@ -54,7 +54,7 @@ namespace metrics.Reporting
         
         public override void Run()
         {
-            using (Out = new StreamWriter(GenerateFilePath(), false, _encoding))
+            using (Out = new StreamWriter(new FileStream(GenerateFilePath(), FileMode.Append), _encoding))
             {
                 Out.Write(_formatter.GetSample());
                 Out.Flush();
