@@ -14,8 +14,9 @@ namespace metrics.Tests
             var machineMetrics = new MachineMetrics(metrics);
 
             machineMetrics.Install();
-
+#if !COREFX
             Assert.IsTrue(metrics.All.Count > 0);
+#endif
         }
     }
 }
