@@ -1,7 +1,6 @@
 {
     "dependencies": {
-        "metrics": { "target": "project" },
-        "NUnit": "3.0.1"
+        "metrics": { "target": "project" }
     },
     "frameworks": {
         "net451": {
@@ -13,6 +12,27 @@
                 "System.Xml": "4.0.0.0",
                 "System.Xml.Linq": "4.0.0.0",
                 "Microsoft.CSharp": "4.0.0.0"
+            },
+            "dependencies": {
+                "NUnit": "2.6.3"
+            }
+        },
+        "dnxcore50": {
+            "compilationOptions": {
+                "define": [ "COREFX" ]
+            },
+            "dependencies": {
+                "System.Runtime": "4.0.21-*",
+                "System.Linq": "4.0.1-*",
+                "System.Collections.Concurrent": "4.0.10",
+                "System.Runtime.Serialization.Xml": "4.0.11",
+                "System.Runtime.Extensions": "4.0.10",
+                "System.Runtime.InteropServices": "4.0.20",
+                "System.Threading.Thread": "4.0.0-*",
+                "System.Threading.ThreadPool": "4.0.10-*",
+                "System.Diagnostics.StackTrace": "4.0.1-*",
+                "System.Diagnostics.Tracing": "4.0.21-*",
+                "NUnit":  "3.0.1"
             }
         },
         "dnxcore50": {
