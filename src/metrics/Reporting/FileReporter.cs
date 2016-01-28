@@ -8,24 +8,23 @@ namespace metrics.Reporting
     /// </summary>
     public class FileReporter : ReporterBase
     {
-        public FileReporter(string path, Metrics metrics) : base(new StreamWriter(path, true, Encoding.UTF8),metrics)
+        public FileReporter(string path, Metrics metrics) : base(new StreamWriter(new FileStream(path, FileMode.Append), Encoding.UTF8),metrics)
         {
             
         }
 
         public FileReporter(string path, Encoding encoding, Metrics metrics)
-            : base(new StreamWriter(path, true, encoding), metrics)
+            : base(new StreamWriter(new FileStream(path, FileMode.Append), encoding), metrics)
         {
             
         }
-
         public FileReporter(string path, IReportFormatter formatter)
-            : base(new StreamWriter(path, true, Encoding.UTF8), formatter)
+            : base(new StreamWriter(new FileStream(path, FileMode.Append), Encoding.UTF8), formatter)
         {
 
         }
 
-        public FileReporter(string path, Encoding encoding, IReportFormatter formatter) : base(new StreamWriter(path, true, encoding), formatter)
+        public FileReporter(string path, Encoding encoding, IReportFormatter formatter) : base(new StreamWriter(new FileStream(path, FileMode.Append), encoding), formatter)
         {
 
         }

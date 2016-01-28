@@ -45,12 +45,20 @@ namespace metrics.Support
 
         public void Set(long value)
         {
+#if COREFX
+            _value = value;
+#else
             Thread.VolatileWrite(ref _value, value);
+#endif
         }
 
         public long Get()
         {
+#if COREFX
+            return _value;
+#else
             return Thread.VolatileRead(ref _value);
+#endif
         }
 
         public static implicit operator VolatileLong(long value)

@@ -2,6 +2,10 @@
 using metrics.Support;
 using NUnit.Framework;
 
+#if COREFX
+using Trace = System.Diagnostics.Debug;
+#endif
+
 namespace metrics.Tests.Support
 {
     [TestFixture]

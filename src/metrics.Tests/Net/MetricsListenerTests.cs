@@ -2,10 +2,14 @@
 using System.IO;
 using System.Net;
 using NUnit.Framework;
+#if !COREFX
 using metrics.Net;
+#endif
 
 namespace metrics.Tests.Net
 {
+
+#if !COREFX
     [TestFixture]
     public class MetricsListenerTests
     {
@@ -111,4 +115,5 @@ namespace metrics.Tests.Net
             }
         }
     }
+#endif
 }

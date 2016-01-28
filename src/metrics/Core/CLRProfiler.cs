@@ -6,6 +6,9 @@ using System.Security;
 using System.Text;
 using System.Threading;
 using metrics.Util;
+#if COREFX
+using metrics.DotnetCoreMocks;
+#endif
 
 namespace metrics.Core
 {
@@ -52,7 +55,9 @@ namespace metrics.Core
             var results = threads.Select(thread => new ThreadInfo
                                                        {
                                                            Name = thread.Name,
+#if !COREFX
                                                            Priority = thread.Priority,
+#endif
                                                            StackFrames = StackFrameInfo.GetStackFrameInfo(GetStackFramesForThread(thread))
                                                        });
 
@@ -62,7 +67,9 @@ namespace metrics.Core
         public class ThreadInfo
         {
             public string Name { internal get; set; }
+#if !COREFX
             public ThreadPriority Priority { internal get; set; }
+#endif
             public IEnumerable<StackFrameInfo> StackFrames { internal get; set; }
         }
 
@@ -133,6 +140,9 @@ namespace metrics.Core
 
         private static IEnumerable<StackFrame> GetStackFramesForThread(Thread thread)
         {
+#if COREFX
+            throw new NotSupportedException();
+#else
             StackTrace trace;
             switch (thread.ThreadState)
             {
@@ -147,11 +157,12 @@ namespace metrics.Core
             }
 
             return trace.GetFrames();
+#endif
         }
 
-        #region Global Metrics
+#region Global Metrics
 
-        #region .NET CLR Memory ("http://msdn.microsoft.com/en-us/library/x2tyfybc.aspx")
+#region .NET CLR Memory ("http://msdn.microsoft.com/en-us/library/x2tyfybc.aspx")
         
         /// <summary>
         /// Displays the sum of the Gen 1 Heap Size, Gen 2 Heap Size, and the Large Object Heap Size counters. This counter indicates the current memory allocated in bytes on the garbage collection heaps.
@@ -450,9 +461,9 @@ namespace metrics.Core
             }
         }
         
-        #endregion
+#endregion
 
-        #region .NET CLR Locks And Threads ("http://msdn.microsoft.com/en-us/library/zf749bat(v=VS.71).aspx")
+#region .NET CLR Locks And Threads ("http://msdn.microsoft.com/en-us/library/zf749bat(v=VS.71).aspx")
         
         /// <summary>
         /// Displays the number of current managed thread objects in the application. This counter maintains the count of both running and stopped threads. This counter is not an average over time; it displays only the last observed value.
@@ -588,9 +599,9 @@ namespace metrics.Core
             }
         }
 
-        #endregion
+#endregion
 
-        #region .NET CLR Networking ("http://msdn.microsoft.com/en-us/library/70xadeyt(v=VS.100).aspx")
+#region .NET CLR Networking ("http://msdn.microsoft.com/en-us/library/70xadeyt(v=VS.100).aspx")
 
         /// <summary>
         /// Displays the cumulative number of bytes received over all open socket connections since the process started. This number includes data and any protocol information that is not defined by TCP/IP.
@@ -735,9 +746,9 @@ namespace metrics.Core
             }
         }
 
-        #endregion
+#endregion
 
-        #region .NET CLR Exceptions ("http://msdn.microsoft.com/en-us/library/kfhcywhs.aspx")
+#region .NET CLR Exceptions ("http://msdn.microsoft.com/en-us/library/kfhcywhs.aspx")
 
         /// <summary>
         /// Displays the total number of exceptions thrown since the application started. This includes both .NET exceptions and unmanaged exceptions that are converted into .NET exceptions. For example, an HRESULT returned from unmanaged code is converted to an exception in managed code.
@@ -808,13 +819,13 @@ namespace metrics.Core
                 return value;
             }
         } 
-        #endregion
+#endregion
         
-        #endregion
+#endregion
 
-        #region Process Metrics
+#region Process Metrics
 
-        #region .NET CLR Memory ("http://msdn.microsoft.com/en-us/library/x2tyfybc.aspx")
+#region .NET CLR Memory ("http://msdn.microsoft.com/en-us/library/x2tyfybc.aspx")
 
         /// <summary>
         /// Displays the sum of the Gen 1 Heap Size, Gen 2 Heap Size, and the Large Object Heap Size counters. This counter indicates the current memory allocated in bytes on the garbage collection heaps.
@@ -1126,9 +1137,9 @@ namespace metrics.Core
             }
         }
 
-        #endregion
+#endregion
         
-        #region .NET CLR LocksAndThreads ("http://msdn.microsoft.com/en-us/library/zf749bat(v=VS.71).aspx")
+#region .NET CLR LocksAndThreads ("http://msdn.microsoft.com/en-us/library/zf749bat(v=VS.71).aspx")
 
         /// <summary>
         /// Displays the number of current managed thread objects in the application. This counter maintains the count of both running and stopped threads. This counter is not an average over time; it displays only the last observed value.
@@ -1264,9 +1275,9 @@ namespace metrics.Core
             }
         }
 
-        #endregion
+#endregion
 
-        #region .NET CLR Networking ("http://msdn.microsoft.com/en-us/library/70xadeyt(v=VS.100).aspx")
+#region .NET CLR Networking ("http://msdn.microsoft.com/en-us/library/70xadeyt(v=VS.100).aspx")
 
         /// <summary>
         /// Displays the cumulative number of bytes received over all open socket connections since the process started. This number includes data and any protocol information that is not defined by TCP/IP.
@@ -1411,9 +1422,9 @@ namespace metrics.Core
             }
         }
 
-        #endregion
+#endregion
 
-        #region .NET CLR Exceptions ("http://msdn.microsoft.com/en-us/library/kfhcywhs.aspx")
+#region .NET CLR Exceptions ("http://msdn.microsoft.com/en-us/library/kfhcywhs.aspx")
 
         /// <summary>
         /// Displays the total number of exceptions thrown since the application started. This includes both .NET exceptions and unmanaged exceptions that are converted into .NET exceptions. For example, an HRESULT returned from unmanaged code is converted to an exception in managed code.
@@ -1485,12 +1496,15 @@ namespace metrics.Core
             }
         }
 
-        #endregion
+#endregion
         
-        #endregion
+#endregion
         
         private static PerformanceCounter GetOrInstallCounter(string property, string name, string category, string instance = null)
         {
+#if COREFX
+            throw new NotSupportedException();
+#else
             if (!Counters[Process].ContainsKey(property))
             {
                 var counter = new PerformanceCounter(category, name, instance ?? Process, true);
@@ -1498,6 +1512,7 @@ namespace metrics.Core
                 Counters[Process].Add(property, counter);
             }
             return Counters[Process][property];
+#endif
         }
     }
 }

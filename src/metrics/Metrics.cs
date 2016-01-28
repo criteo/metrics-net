@@ -5,6 +5,9 @@ using System.Diagnostics;
 using metrics.Core;
 using metrics.Reporting;
 using metrics.Support;
+#if COREFX
+using metrics.DotnetCoreMocks;
+#endif
 
 namespace metrics
 {
@@ -24,10 +27,13 @@ namespace metrics
         /// <param name="counter">The performance counter name</param>
         /// <param name="instance">The performance counter instance, if applicable</param>
         /// <param name="label">A label to distinguish the metric in polling reports</param>
-        public  void InstallPerformanceCounterGauge(string category, string counter, string instance, string label)
+        public void InstallPerformanceCounterGauge(string category, string counter, string instance, string label)
         {
+#if COREFX
+#else
             var performanceCounter = new PerformanceCounter(category, counter, instance, true);
             GetOrAdd(new MetricName(typeof(Metrics), Environment.MachineName + label), new GaugeMetric<double>(() => performanceCounter.NextValue()));
+#endif
         }
 
         /// <summary>
@@ -36,10 +42,13 @@ namespace metrics
         /// <param name="category">The performance counter category</param>
         /// <param name="counter">The performance counter name</param>
         /// <param name="label">A label to distinguish the metric in polling reports</param>
-        public  void InstallPerformanceCounterGauge(string category, string counter, string label)
+        public void InstallPerformanceCounterGauge(string category, string counter, string label)
         {
+#if COREFX
+#else
             var performanceCounter = new PerformanceCounter(category, counter, true);
             GetOrAdd(new MetricName(typeof(Metrics), Environment.MachineName + label), new GaugeMetric<double>(() => performanceCounter.NextValue()));
+#endif
         }
 
         /// <summary>

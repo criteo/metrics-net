@@ -6,12 +6,17 @@ using metrics.Core;
 using NUnit.Framework;
 using metrics.Util;
 
+#if COREFX
+using Trace = System.Diagnostics.Debug;
+using metrics.Tests.DotnetCoreMocks;
+#endif
+
 namespace metrics.Tests.Core
 {
     [TestFixture]
     public class CLRProfilerTests
     {
-        [Test]
+       [Test]
         public void Can_dump_tracked_threads()
         {
             var factory = new NamedThreadFactory("Can_dump_managed_threads");
