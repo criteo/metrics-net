@@ -78,7 +78,7 @@ namespace metrics.Tests.Reporting
                     reporter.Start(1, TimeUnit.Seconds);
                     while (true)
                     {
-                        Thread.Sleep(1000);
+                        Thread.Sleep(10000);
                         var runs = reporter.Runs;
                         if (runs == ticks)
                         {
