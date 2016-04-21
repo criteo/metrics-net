@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -20,9 +20,21 @@ namespace metrics.Stats
     /// </see>
     public class ExponentiallyDecayingSample : ISample<ExponentiallyDecayingSample>
     {
-        private static readonly long RescaleThreshold = TimeUnit.Hours.ToNanos(1);
+        private class ReverseOrderDoubleComparer : IComparer<double>
+        {
+            public int Compare(double x, double y)
+            {
+                return y.CompareTo(x);
+            }
+        }
+
+        // We use the reverse order as a SortedList is always aligned to the "lower" part.
+        // As we always remove the smallest value, it would mean always copy all the data.
+        private static readonly IComparer<double> PriorityComparer = new ReverseOrderDoubleComparer();
+
+        private static readonly long RescaleThreshold = TimeSpan.FromHours(1).Ticks;
         /* Implemented originally as ConcurrentSkipListMap, so lookups will be much slower */
-        private readonly SortedDictionary<double, long> _values;
+        private readonly SortedList<double, long> _values;
         private readonly int _reservoirSize;
         private readonly double _alpha;
         private readonly AtomicLong _count = new AtomicLong(0);
@@ -37,7 +49,7 @@ namespace metrics.Stats
         /// <param name="alpha">The exponential decay factor; the higher this is, the more biased the sample will be towards newer values</param>
         public ExponentiallyDecayingSample(int reservoirSize, double alpha)
         {
-            _values = new SortedDictionary<double, long>();
+            _values = new SortedList<double, long>(reservoirSize, PriorityComparer);
             _alpha = alpha;
             _reservoirSize = reservoirSize;
             Clear();
@@ -87,19 +99,20 @@ namespace metrics.Stats
                 if (newCount <= _reservoirSize)
                 {
                     _values[priority] = value;
-                    if (newCount == _reservoirSize)
+                   /* if (newCount == _reservoirSize)
                     {
                         _firstPriority = _values.Keys.First();
-                    }
+                    }*/
                 }
                 else
                 {
-                    var first = _firstPriority;
+                    //   var first = _firstPriority;
+                    var first = _values.Keys[_values.Count - 1];
                     if (first < priority)
                     {
                         _values.Remove(first);
                         _values[priority] = value;
-                       _firstPriority = _values.Keys.First();
+                       //_firstPriority = _values.Keys.First();
                     }
                 }
             }
