@@ -9,6 +9,13 @@ namespace metrics.Net
 {
     public class MetricsListener : IDisposable
     {
+        /// <summary>
+        /// This error code is raise when GetContext() is interrupted because the
+        /// httplistener as been Stop()ped. It means we need to exit the main while
+        /// loop in the listening thread.
+        /// </summary>
+        private const int GetContextInterrupted = 995;
+
         public const string NotFoundResponse = "<!doctype html><html><body>Resource not found</body></html>";
         public const string PingResponse = "pong";
         private HttpListener _listener;
@@ -20,6 +27,7 @@ namespace metrics.Net
         {
             _metrics = metrics;
         }
+
         private static HttpListener InitializeListenerOnPort(int port)
         {
             var listener = new HttpListener();
@@ -55,9 +63,20 @@ namespace metrics.Net
             {
                 while (!_task.IsCancellationRequested)
                 {
-                    var context = _listener.GetContext();
-
-                    ThreadPool.QueueUserWorkItem(_ => HandleContext(context));
+                    try
+                    {
+                        var context = _listener.GetContext();
+                        ThreadPool.QueueUserWorkItem(_ => HandleContext(context));
+                    }
+                    catch (HttpListenerException e)
+                    {
+                        if (e.ErrorCode == GetContextInterrupted)
+                        {
+                            // The receiver has been stopped. Return.
+                            return;
+                        }
+                        throw;
+                    }
                 }
             }, _task.Token);
         }
@@ -83,10 +102,16 @@ namespace metrics.Net
                     RespondWithFile(response, "jquery.flot.min.js");
                     break;
                 case "/":
-                    if(mimeType.StartsWith("text/html"))
+                    switch (mimeType)
+                    {
+                        case "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8":
                             RespondWithFile(response, "index.html");
-                    else // "application/json"
+                            break;
+
+                        default: // "application/json"
                             RespondWithNotFound(response);
+                            break;
+                    }
                     break;
                 case "/ping":
                     response.StatusCode = 200;

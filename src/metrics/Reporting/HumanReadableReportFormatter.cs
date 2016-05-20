@@ -14,7 +14,7 @@ namespace metrics.Reporting
             _metrics = metrics;
         }
 
-        public string GetSample()
+        public virtual string GetSample()
         {
             var sb = new StringBuilder();
             var now = DateTime.UtcNow;
