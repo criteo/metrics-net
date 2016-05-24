@@ -35,3 +35,4 @@ publish.xml
 TestResults
 metrics.1.1.dotCover
 packages/
+project.lock.json
