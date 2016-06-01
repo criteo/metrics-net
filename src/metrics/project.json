@@ -36,19 +36,20 @@
         "System.Runtime.Serialization": "4.0.0.0"
       }
     },
-    "dnxcore50": {
+    "netcoreapp1.0": {
+      "imports": [ "dnxcore50" ],
       "buildOptions": {
         "define": [ "COREFX" ]
       },
       "dependencies": {
-        "NETStandard.Library": "1.5.0-*",
-        "System.Runtime.Serialization.Xml": "4.1.0-*",
-        "System.Threading": "4.0.11-*",
-        "System.Security.Cryptography.RandomNumberGenerator": "4.0.0-*",
-        "System.Threading.Thread": "4.0.0-*",
-        "System.Diagnostics.StackTrace": "4.0.1-*",
-        "System.Diagnostics.Process": "4.1.0-*",
-      },
+        "NETStandard.Library": "1.5.0-rc2*",
+        "System.Runtime.Serialization.Xml": "4.1.0-rc2*",
+        "System.Threading": "4.0.11-rc2*",
+        "System.Threading.Thread": "4.0.0-rc2*",
+        "System.Diagnostics.StackTrace": "4.0.1-rc2*",
+        "System.Diagnostics.Process": "4.1.0-rc2*",
+        "System.Security.Cryptography.Algorithms": "4.1.0-rc2*"
+      }
     }
   }
 }
