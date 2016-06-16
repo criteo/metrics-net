@@ -2,17 +2,17 @@
   "packOptions": {
     "summary": "Capturing CLR and application-level metrics.",
     "tags": [ "CLR", "metrics" ],
-    "owners": [ "Daniel Crenna" ],
-    "projectUrl": "https://github.com/danielcrenna/metrics-net",
-    "licenseUrl": "https://github.com/danielcrenna/metrics-net/blob/master/LICENSE",
+    "owners": [ "Criteo" ],
+    "projectUrl": "https://github.com/criteo/metrics-net",
+    "licenseUrl": "https://github.com/criteo/metrics-net/blob/master/LICENSE",
     "iconUrl": "http://apitize.com.s3.amazonaws.com/logo_metrics.png",
     "repository": {
       "type": "git",
-      "url": "https://github.com/danielcrenna/metrics-net"
+      "url": "https://github.com/criteo/metrics-net"
     }
   },
-  "version": "1.0.13",
-  "authors": ["Daniel Crenna"],
+  "version": "1.1.0",
+  "authors": ["Criteo"],
   "description": "Capturing CLR and application-level metrics. So you know what's going on. An idiomatic port of Coda Hale's Metrics for Scala and the JVM.",
   "title": "metrics-net",
   "language": "en-US",
@@ -42,13 +42,12 @@
         "define": [ "COREFX" ]
       },
       "dependencies": {
-        "NETStandard.Library": "1.5.0-rc2*",
-        "System.Runtime.Serialization.Xml": "4.1.0-rc2*",
-        "System.Threading": "4.0.11-rc2*",
-        "System.Threading.Thread": "4.0.0-rc2*",
-        "System.Diagnostics.StackTrace": "4.0.1-rc2*",
-        "System.Diagnostics.Process": "4.1.0-rc2*",
-        "System.Security.Cryptography.Algorithms": "4.1.0-rc2*"
+        "NETStandard.Library": "1.6.0",
+        "System.Runtime.Serialization.Xml": "4.1.0",
+        "System.Threading": "4.0.11",
+        "System.Threading.Thread": "4.0.0",
+        "System.Diagnostics.StackTrace": "4.0.1",
+        "System.Diagnostics.Process": "4.1.0"
       }
     }
   }
