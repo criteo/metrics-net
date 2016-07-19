@@ -59,6 +59,7 @@
     <Compile Include="Core\HistogramMetric.cs" />
     <Compile Include="Core\ManualTimerMetric.cs" />
     <Compile Include="Core\PerSecondCounterMetric.cs" />
+    <Compile Include="Core\SharedTimer.cs" />
     <Compile Include="Core\TimerMetricBase.cs" />
     <Compile Include="MachineMetricsCategory.cs" />
     <Compile Include="Reporting\HumanReadableReportFormatter.cs" />

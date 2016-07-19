@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
 using metrics.Stats;
 using System.Text;
 using System.Runtime.Serialization;
@@ -11,15 +9,14 @@ namespace metrics.Core
     {
         private readonly string _eventType;
         private readonly TimeUnit _rateUnit;
-        private readonly CancellationTokenSource _token = new CancellationTokenSource();
 
+        private static readonly SharedTimer Timer = new SharedTimer(TimeSpan.FromSeconds(1));
 
-        private EWMA _ewma = EWMA.OneSecondEWMA();
+        private EWMA _ewma;
 
-
-        private void TimeElapsed()
+        private void TimeElapsed(long timestamp)
         {
-            _ewma.Tick();
+            _ewma.Tick(timestamp);
         }
         public void LogJson(StringBuilder sb)
         {
@@ -68,31 +65,22 @@ namespace metrics.Core
 
         private PerSecondCounterMetric(string eventType, TimeUnit rateUnit)
         {
+            _ewma = EWMA.OneSecondEWMA(Timer.ElapsedNanoseconds);
+
+            Timer.Tick += TimeElapsed;
+
             _eventType = eventType;
             _rateUnit = rateUnit;
         }
 
         public static PerSecondCounterMetric New(string eventType)
         {
-            var meter = new PerSecondCounterMetric(eventType, TimeUnit.Seconds);
-
-            var interval = TimeSpan.FromSeconds(1);
-
-            Task.Factory.StartNew(async () =>
-            {
-                while (!meter._token.IsCancellationRequested)
-                {
-                    await Task.Delay(interval, meter._token.Token);
-                    meter.TimeElapsed();
-                }
-            }, meter._token.Token);
-
-            return meter;
+            return new PerSecondCounterMetric(eventType, TimeUnit.Seconds);
         }
 
         public void Dispose()
         {
-            _token.Cancel();
+            Timer.Tick -= TimeElapsed;
         }
     }
 }

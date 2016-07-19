@@ -1,7 +1,5 @@
 using System;
 using System.Runtime.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
 using metrics.Stats;
 using metrics.Support;
 using System.Text;
@@ -16,36 +14,30 @@ namespace metrics.Core
     {
         private AtomicLong _count = new AtomicLong();
         private long _startTime = DateTime.UtcNow.Ticks;
-        private static readonly TimeSpan Interval = TimeSpan.FromSeconds(5);
 
-        private EWMA _m1Rate = EWMA.OneMinuteEWMA();
-        private EWMA _m5Rate = EWMA.FiveMinuteEWMA();
-        private EWMA _m15Rate = EWMA.FifteenMinuteEWMA();
+        private static readonly SharedTimer Timer = new SharedTimer(TimeSpan.FromSeconds(5));
 
-        private readonly CancellationTokenSource _token = new CancellationTokenSource();
+        private EWMA _m1Rate;
+        private EWMA _m5Rate;
+        private EWMA _m15Rate;
 
         public static MeterMetric New(string eventType, TimeUnit rateUnit)
         {
-            var meter = new MeterMetric(eventType, rateUnit);
-
-            Task.Factory.StartNew(async () =>
-            {
-                while (!meter._token.IsCancellationRequested)
-                {
-                    await Task.Delay(Interval, meter._token.Token);
-                    meter.Tick();
-                }
-            }, meter._token.Token);
-            return meter;
+            return new MeterMetric(eventType, rateUnit);
         }
-
-        private readonly Timer _timer;
 
         public MeterMetric(string eventType, TimeUnit rateUnit)
         {
+            var timestamp = Timer.ElapsedNanoseconds;
+
+            _m1Rate = EWMA.OneMinuteEWMA(timestamp);
+            _m5Rate = EWMA.FiveMinuteEWMA(timestamp);
+            _m15Rate = EWMA.FifteenMinuteEWMA(timestamp);
+
             EventType = eventType;
             RateUnit = rateUnit;
-            _timer = new Timer(_ => Tick(), null, Interval, Interval);
+
+            Timer.Tick += Tick;
         }
 
         /// <summary>
@@ -54,11 +46,14 @@ namespace metrics.Core
         public void Clear()
         {
             _count.Set(0);
-            _m1Rate.Clear();
-            _m5Rate.Clear();
-            _m15Rate.Clear();
+
+            var timestamp = Timer.ElapsedNanoseconds;
+
+            _m1Rate.Clear(timestamp);
+            _m5Rate.Clear(timestamp);
+            _m15Rate.Clear(timestamp);
+
             _startTime = DateTime.UtcNow.Ticks;
-            _timer.Change(Interval, Interval);
         }
 
         /// <summary>
@@ -73,11 +68,11 @@ namespace metrics.Core
         /// <returns></returns>
         public string EventType { get; private set; }
 
-        private void Tick()
+        private void Tick(long timestamp)
         {
-            _m1Rate.Tick();
-            _m5Rate.Tick();
-            _m15Rate.Tick();
+            _m1Rate.Tick(timestamp);
+            _m5Rate.Tick(timestamp);
+            _m15Rate.Tick(timestamp);
         }
 
         public void LogJson(StringBuilder sb)
@@ -124,7 +119,7 @@ namespace metrics.Core
         /// <remarks>
         /// This rate has the same exponential decay factor as the fifteen-minute load
         /// average in the top Unix command.
-        /// </remarks> 
+        /// </remarks>
         /// </summary>
         public double FifteenMinuteRate
         {
@@ -207,7 +202,7 @@ namespace metrics.Core
 
         public void Dispose()
         {
-            _timer.Dispose();
+            Timer.Tick -= Tick;
         }
     }
 }
