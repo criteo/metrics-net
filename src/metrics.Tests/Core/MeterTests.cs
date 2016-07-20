@@ -1,9 +1,6 @@
-using System;
 using System.Diagnostics;
 using System.Threading;
 using NUnit.Framework;
-using metrics.Core;
-using metrics.Reporting;
 
 namespace metrics.Tests.Core
 {
@@ -40,7 +37,7 @@ namespace metrics.Tests.Core
             Assert.IsNotNull(meter);
 
             var i = 0;
-            ThreadPool.QueueUserWorkItem(s => 
+            ThreadPool.QueueUserWorkItem(s =>
             {
                 while (i < count)
                 {
@@ -64,7 +61,7 @@ namespace metrics.Tests.Core
 
             Assert.IsTrue(fiveMinuteRate > 0);
             Trace.WriteLine("Five minute rate:" + meter.FiveMinuteRate);
-            
+
             Assert.IsTrue(fifteenMinuteRate > 0);
             Trace.WriteLine("Fifteen minute rate:" + meter.FifteenMinuteRate);
 

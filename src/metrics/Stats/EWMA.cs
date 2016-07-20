@@ -16,46 +16,48 @@ namespace metrics.Stats
 
         private readonly AtomicLong _uncounted = new AtomicLong(0);
         private readonly double _alpha;
-        private readonly double _interval;
+        private readonly TimeSpan _expectedTickInterval;
         private volatile bool _initialized;
         private VolatileDouble _rate;
+        private long _lastTick;
 
         /// <summary>
         /// Creates a new EWMA which is equivalent to the UNIX one minute load average and which expects to be ticked every 5 seconds.
         /// </summary>
-        public static EWMA OneMinuteEWMA()
+        public static EWMA OneMinuteEWMA(long timestamp)
         {
-            return new EWMA(M1Alpha, 5, TimeUnit.Seconds);
+            return new EWMA(M1Alpha, timestamp, TimeSpan.FromSeconds(5));
         }
 
         /// <summary>
         /// Creates a new EWMA which is equivalent to the UNIX five minute load average and which expects to be ticked every 5 seconds.
         /// </summary>
         /// <returns></returns>
-        public static EWMA FiveMinuteEWMA()
+        public static EWMA FiveMinuteEWMA(long timestamp)
         {
-            return new EWMA(M5Alpha, 5, TimeUnit.Seconds);
+            return new EWMA(M5Alpha, timestamp, TimeSpan.FromSeconds(5));
         }
 
         /// <summary>
         ///  Creates a new EWMA which is equivalent to the UNIX fifteen minute load average and which expects to be ticked every 5 seconds.
         /// </summary>
         /// <returns></returns>
-        public static EWMA FifteenMinuteEWMA()
+        public static EWMA FifteenMinuteEWMA(long timestamp)
         {
-            return new EWMA(M15Alpha, 5, TimeUnit.Seconds);
+            return new EWMA(M15Alpha, timestamp, TimeSpan.FromSeconds(5));
         }
 
         /// <summary>
         /// Create a new EWMA with a specific smoothing constant.
         /// </summary>
         /// <param name="alpha">The smoothing constant</param>
-        /// <param name="interval">The expected tick interval</param>
-        /// <param name="intervalUnit">The time unit of the tick interval</param>
-        public EWMA(double alpha, long interval, TimeUnit intervalUnit)
+        /// <param name="timestamp">The absolute timestamp (in nanoseconds)</param>
+        /// <param name="expectedTickInterval">The expected interval between each tick</param>
+        public EWMA(double alpha, long timestamp, TimeSpan expectedTickInterval)
         {
-            _interval = intervalUnit.ToNanos(interval);
             _alpha = alpha;
+            _lastTick = timestamp;
+            _expectedTickInterval = expectedTickInterval;
         }
 
         /// <summary>
@@ -70,8 +72,9 @@ namespace metrics.Stats
         /// <summary>
         /// Clears all recorded values
         /// </summary>
-        public void Clear()
+        public void Clear(long timestamp)
         {
+            _lastTick = timestamp;
             _uncounted.Set(0);
             _rate.Set(0);
             _initialized = false;
@@ -80,19 +83,32 @@ namespace metrics.Stats
         /// <summary>
         /// Mark the passage of time and decay the current rate accordingly.
         /// </summary>
-        public void Tick()
+        public void Tick(long timestamp)
         {
             var count = _uncounted.GetAndSet(0);
-            var instantRate = count / _interval;
+
+            long interval = timestamp - _lastTick;
+
+            var instantRate = count / (double)interval;
             if (_initialized)
             {
                 _rate += _alpha * (instantRate - _rate);
             }
             else
             {
+                var expectedIntervalInNanoseconds = _expectedTickInterval.TotalMilliseconds * 1000000;
+
+                if (interval < expectedIntervalInNanoseconds * 0.7)
+                {
+                    // The tick occured too soon to have meaningful data
+                    return;
+                }
+
                 _rate.Set(instantRate);
                 _initialized = true;
             }
+
+            _lastTick = timestamp;
         }
 
         /// <summary>
