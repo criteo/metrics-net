@@ -45,12 +45,12 @@ namespace metrics.Support
 
         public void Set(double value)
         {
-            Thread.VolatileWrite(ref _value, value);
+            Volatile.Write(ref _value, value);
         }
 
         public double Get()
         {
-            return Thread.VolatileRead(ref _value);
+            return Volatile.Read(ref _value);
         }
 
         public static implicit operator VolatileDouble(double value)
